@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: task-automation-panel
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/task_automation_panel?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: gabo
+    password: Pa$$w0rd
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-this-to-a-256-bit-secret-key-for-production-use-min-32-chars}
+    access-token-expiration-ms: ${JWT_ACCESS_EXPIRATION:900000}
+    refresh-token-expiration-ms: ${JWT_REFRESH_EXPIRATION:604800000}
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:5173}
+  security:
+    bcrypt-strength: 12
+    max-login-attempts: 5
+    lock-duration-minutes: 30
+  seed:
+    admin-email: ${SEED_ADMIN_EMAIL:admin@empresa.com}
+    admin-password: ${SEED_ADMIN_PASSWORD:Admin123!}
+    enabled: ${SEED_ENABLED:true}
+
+logging:
+  level:
+    com.empresa.automation: INFO
+    org.springframework.security: WARN
