@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react';
 import { executionService } from '../../../shared/services';
 import type { Execution, PageResponse } from '../../../shared/types';
-import { Card } from '../../../shared/components/Card';
+import { PageHeader } from '../../../shared/components/PageHeader';
+import { Badge } from '../../../shared/components/Badge';
 import { EmptyState, ErrorState } from '../../../shared/components/EmptyState';
 import { PageLoader } from '../../../shared/components/Spinner';
-import { formatDate, STATUS_COLORS } from '../../../shared/utils';
+import { formatDate } from '../../../shared/utils';
+import { Select } from '../../../shared/components/Input';
+
+const statusVariant = (status: string) => {
+  if (status === 'SUCCESS') return 'success';
+  if (status === 'FAILED') return 'failed';
+  return 'partial';
+};
 
 export function ExecutionsPage() {
   const [data, setData] = useState<PageResponse<Execution> | null>(null);
@@ -31,60 +39,62 @@ export function ExecutionsPage() {
   useEffect(() => { load(); }, [statusFilter]);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Historial de ejecuciones</h2>
-        <p className="text-slate-500">Registro de todas las ejecuciones de automatizaciones</p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        badge="Historial"
+        title="Ejecuciones"
+        description="Registro de todas las ejecuciones de automatizaciones con estado y detalle de errores."
+      />
 
-      <select
+      <Select
+        label="Filtrar por estado"
         value={statusFilter}
         onChange={(e) => setStatusFilter(e.target.value)}
-        className="rounded-lg border px-3 py-2 dark:border-slate-600 dark:bg-slate-800"
+        className="max-w-xs"
       >
         <option value="">Todos los estados</option>
         <option value="SUCCESS">Éxito</option>
         <option value="FAILED">Fallido</option>
         <option value="PARTIAL">Parcial</option>
-      </select>
+      </Select>
 
       {loading ? (
         <PageLoader />
       ) : error ? (
         <ErrorState message={error} onRetry={load} />
       ) : !data?.content.length ? (
-        <EmptyState title="Sin ejecuciones" description="Las ejecuciones aparecerán aquí" />
+        <div className="table-shell">
+          <EmptyState title="Sin ejecuciones" description="Las ejecuciones aparecerán aquí cuando corras automatizaciones." />
+        </div>
       ) : (
-        <Card>
+        <div className="table-shell">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200 text-left dark:border-slate-700">
-                  <th className="pb-3 pr-4 font-medium">Automatización</th>
-                  <th className="pb-3 pr-4 font-medium">Estado</th>
-                  <th className="pb-3 pr-4 font-medium">Mensaje</th>
-                  <th className="pb-3 pr-4 font-medium">Ejecutado por</th>
-                  <th className="pb-3 font-medium">Fecha</th>
+                <tr className="border-b border-slate-200/80 bg-slate-50/80 dark:border-slate-800 dark:bg-slate-800/40">
+                  <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Automatización</th>
+                  <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Estado</th>
+                  <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Mensaje</th>
+                  <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Ejecutado por</th>
+                  <th className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Fecha</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {data.content.map((ex) => (
-                  <tr key={ex.id} className="border-b border-slate-100 dark:border-slate-800">
-                    <td className="py-3 pr-4">{ex.automationName}</td>
-                    <td className="py-3 pr-4">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[ex.status]}`}>
-                        {ex.status}
-                      </span>
+                  <tr key={ex.id} className="transition-colors hover:bg-slate-50/80 dark:hover:bg-slate-800/30">
+                    <td className="px-5 py-4 font-semibold text-slate-800 dark:text-slate-100">{ex.automationName}</td>
+                    <td className="px-5 py-4">
+                      <Badge variant={statusVariant(ex.status) as 'success' | 'failed' | 'partial'}>{ex.status}</Badge>
                     </td>
-                    <td className="py-3 pr-4 text-slate-500">{ex.errorMessage || ex.message || '—'}</td>
-                    <td className="py-3 pr-4">{ex.executedByName}</td>
-                    <td className="py-3">{formatDate(ex.executedAt)}</td>
+                    <td className="max-w-xs truncate px-5 py-4 text-slate-500">{ex.errorMessage || ex.message || '—'}</td>
+                    <td className="px-5 py-4 text-slate-600 dark:text-slate-400">{ex.executedByName}</td>
+                    <td className="whitespace-nowrap px-5 py-4 text-slate-400">{formatDate(ex.executedAt)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </Card>
+        </div>
       )}
     </div>
   );

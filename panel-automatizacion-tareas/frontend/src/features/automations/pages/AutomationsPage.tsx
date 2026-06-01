@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Copy, Play, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Copy, Play, Pencil, Trash2, Search } from 'lucide-react';
 import { automationService } from '../../../shared/services';
 import type { Automation, PageResponse } from '../../../shared/types';
 import { Button } from '../../../shared/components/Button';
 import { Card } from '../../../shared/components/Card';
+import { PageHeader } from '../../../shared/components/PageHeader';
+import { Badge } from '../../../shared/components/Badge';
 import { EmptyState, ErrorState } from '../../../shared/components/EmptyState';
 import { PageLoader } from '../../../shared/components/Spinner';
 import { TRIGGER_LABELS, formatDate } from '../../../shared/utils';
@@ -51,76 +53,85 @@ export function AutomationsPage() {
   const canDelete = hasRole('ADMIN', 'MANAGER');
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Automatizaciones</h2>
-          <p className="text-slate-500">Gestione sus flujos de automatización</p>
-        </div>
-        {canEdit && (
+    <div className="space-y-8">
+      <PageHeader
+        badge="Flujos"
+        title="Automatizaciones"
+        description="Crea y gestiona reglas del tipo si ocurre X, entonces hacer Y."
+        action={canEdit && (
           <Link to="/automations/new">
             <Button><Plus className="h-4 w-4" /> Nueva automatización</Button>
           </Link>
         )}
-      </div>
-
-      <input
-        type="search"
-        placeholder="Buscar por nombre..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="w-full max-w-md rounded-lg border border-slate-300 px-4 py-2 dark:border-slate-600 dark:bg-slate-800"
       />
+
+      <div className="relative max-w-md">
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <input
+          type="search"
+          placeholder="Buscar por nombre..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="input-field pl-10"
+        />
+      </div>
 
       {loading ? (
         <PageLoader />
       ) : error ? (
         <ErrorState message={error} onRetry={load} />
       ) : !data?.content.length ? (
-        <EmptyState
-          title="Sin automatizaciones"
-          description="Cree su primera regla de automatización"
-          action={canEdit && <Link to="/automations/new"><Button>Crear automatización</Button></Link>}
-        />
+        <Card>
+          <EmptyState
+            title="Sin automatizaciones"
+            description="Crea tu primera regla para empezar a automatizar tareas internas."
+            action={canEdit && <Link to="/automations/new"><Button>Crear automatización</Button></Link>}
+          />
+        </Card>
       ) : (
         <div className="grid gap-4">
           {data.content.map((auto) => (
-            <Card key={auto.id}>
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-slate-900 dark:text-white">{auto.name}</h3>
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${auto.active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+            <Card key={auto.id} hover accent="brand">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">{auto.name}</h3>
+                    <Badge variant={auto.active ? 'active' : 'inactive'}>
                       {auto.active ? 'Activa' : 'Inactiva'}
-                    </span>
+                    </Badge>
                   </div>
-                  <p className="mt-1 text-sm text-slate-500">{auto.description}</p>
-                  <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
-                    <span>Trigger: {TRIGGER_LABELS[auto.triggerType]}</span>
-                    <span>·</span>
-                    <span>{auto.conditions.length} condiciones</span>
-                    <span>·</span>
-                    <span>{auto.actions.length} acciones</span>
-                    <span>·</span>
-                    <span>Actualizado: {formatDate(auto.updatedAt)}</span>
+                  {auto.description && (
+                    <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{auto.description}</p>
+                  )}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                      {TRIGGER_LABELS[auto.triggerType]}
+                    </span>
+                    <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                      {auto.conditions.length} condiciones
+                    </span>
+                    <span className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                      {auto.actions.length} acciones
+                    </span>
+                    <span className="text-xs text-slate-400">· {formatDate(auto.updatedAt)}</span>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex shrink-0 flex-wrap gap-2">
                   {canEdit && (
                     <>
                       <Link to={`/automations/${auto.id}/edit`}>
-                        <Button variant="secondary" size="sm"><Pencil className="h-4 w-4" /></Button>
+                        <Button variant="secondary" size="sm" title="Editar"><Pencil className="h-4 w-4" /></Button>
                       </Link>
-                      <Button variant="secondary" size="sm" onClick={() => handleDuplicate(auto.id)}>
+                      <Button variant="secondary" size="sm" title="Duplicar" onClick={() => handleDuplicate(auto.id)}>
                         <Copy className="h-4 w-4" />
                       </Button>
-                      <Button variant="secondary" size="sm" onClick={() => handleExecute(auto.id)}>
+                      <Button variant="outline" size="sm" title="Ejecutar" onClick={() => handleExecute(auto.id)}>
                         <Play className="h-4 w-4" />
                       </Button>
                     </>
                   )}
                   {canDelete && (
-                    <Button variant="danger" size="sm" onClick={() => handleDelete(auto.id)}>
+                    <Button variant="danger" size="sm" title="Eliminar" onClick={() => handleDelete(auto.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
